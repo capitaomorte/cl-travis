@@ -17,6 +17,24 @@ get() {
     return 1;
 }
 
+
+# get_and_unpack <tarball_destination> <uncompression option> <unpacked_destination> <urls>
+get_and_unpack (){
+    tarball_destination=$1
+    opt=$2
+    unpacked_destination=$3
+    shift 3
+    for url in "$@"; do
+        echo "Downloading and unpacking ${url}..."
+        if curl --no-progress-bar --retry 10  -o "$tarball_destination" -L "$url"\
+                && unpack $opt $tarball_destination $unpacked_destination; then
+            return 0;
+        else
+            echo "Failed to download and unpack ${url}."
+        fi
+    done
+}
+
 # unpack <uncompression option> <file> <destination>
 unpack() {
     opt=$1
@@ -124,8 +142,7 @@ SBCL_DIR="$HOME/sbcl"
 
 install_sbcl() {
     echo "Installing SBCL..."
-    get "$SBCL_TARBALL" "$SBCL_TARBALL_URL1" "$SBCL_TARBALL_URL2" "$SBCL_TARBALL_URL3"
-    unpack -j "$SBCL_TARBALL" "$SBCL_DIR"
+    get_and_unpack "$SBCL_TARBALL" -j "$SBCL_DIR" "$SBCL_TARBALL_URL1" "$SBCL_TARBALL_URL2" "$SBCL_TARBALL_URL3"
     ( cd "$SBCL_DIR" && sudo bash install.sh )
 
     cim use sbcl-system --default
